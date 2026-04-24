@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mapa Estratégico 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- ========== MAIN PAGE ========== -->
+  <div id="main-page">
+
+    <!-- HEADER -->
+    <header class="site-header">
+      <div class="header-inner">
+        <div class="header-logo">
+          <span class="logo-icon"></span>
+          <span class="logo-text">Estratégia <strong>2026</strong></span>
+        </div>
+        <nav class="header-nav">
+          <a href="#mapa" class="nav-link">Mapa</a>
+          <a href="#projetos" class="nav-link">Projetos Estratégicos</a>
+          <a href="#meta" class="nav-link">Supera</a>
+          <a href="https://grupoacocearense.mybeehome.com/news/2488/detail" target="_blank" class="nav-link">Live Juntos pelo Resultado</a>
+        </nav>
+        <button class="btn-admin-open" onclick="openAdminLogin()">⚙ Admin</button>
+      </div>
+    </header>
+
+    <!-- SECTION 1: MAPA ESTRATÉGICO -->
+    <section class="section-map" id="mapa">
+      <div class="container">
+        <div class="section-label">Mapa Estratégico</div>
+        <h1 class="section-title">Juntos pelo Resultado <span class="highlight">2026</span></h1>
+        <p class="section-sub">Perspectivas estratégicas que orientam nossos projetos e entregas</p>
+
+        <!-- PILARES TOP -->
+        <div class="map-pillars">
+          <div class="pillar pillar-blue">Geração de valor</div>
+          <div class="pillar pillar-yellow">Centricidade no cliente</div>
+          <div class="pillar pillar-orange">Excelência Operacional</div>
+          <div class="pillar pillar-green">Valorização das pessoas</div>
+        </div>
+
+        <!-- PERSPECTIVAS -->
+        <div class="map-rows">
+
+          <!-- Row 1: Sustentabilidade e Governança -->
+          <div class="map-row row-1">
+            <div class="row-label">
+              <span>Sustentabilidade</span>
+              <span>e Governança</span>
+            </div>
+            <div class="row-items">
+              <div class="map-item">Crescer em receitas</div>
+              <div class="map-arrow">→</div>
+              <div class="map-item">Crescer em geração de caixa</div>
+              <div class="map-arrow">→</div>
+              <div class="map-item">Crescer em lucratividade</div>
+            </div>
+          </div>
+
+          <!-- Row 2: Mercado e Clientes -->
+          <div class="map-row row-2">
+            <div class="row-label">
+              <span>Mercado</span>
+              <span>e Clientes</span>
+            </div>
+            <div class="row-items">
+              <div class="map-item">Elevar o nível de satisfação e relacionamento com os clientes</div>
+              <div class="map-arrow">→</div>
+              <div class="map-item">Aumentar, reter e reativar clientes</div>
+              <div class="map-arrow">→</div>
+              <div class="map-item">Aumentar o Market Share de Longos</div>
+              <div class="map-arrow">→</div>
+              <div class="map-item">Aumentar o Market Share de Planos</div>
+            </div>
+          </div>
+
+          <!-- Row 3: Tecnologia e processos -->
+          <div class="map-row row-3">
+            <div class="row-label">
+              <span>Tecnologia</span>
+              <span>e processos</span>
+            </div>
+            <div class="row-items">
+              <div class="map-item sm">Elevar a eficiência de suprimentos de MP e insumos</div>
+              <div class="map-arrow">→</div>
+              <div class="map-item sm">Elevar a eficiência de Manufatura</div>
+              <div class="map-arrow">→</div>
+              <div class="map-item sm">Elevar a eficiência Logística</div>
+              <div class="map-arrow">→</div>
+              <div class="map-item sm highlight-item">Elevar a eficiência do Modelo Comercial</div>
+              <div class="map-arrow">←</div>
+              <div class="map-item sm">Otimizar a estratégia e execução de preços</div>
+              <div class="map-arrow">←</div>
+              <div class="map-item sm">Elevar a eficiência do atendimento Pós-Vendas</div>
+              <div class="map-arrow">←</div>
+              <div class="map-item sm">Potencializar os resultados do negócio por meio de tecnologia</div>
+            </div>
+          </div>
+
+          <!-- Row 4: Aprendizado e crescimento -->
+          <div class="map-row row-4">
+            <div class="row-label">
+              <span>Aprendizado</span>
+              <span>e crescimento</span>
+            </div>
+            <div class="row-items">
+              <div class="map-item">Desbloquear o potencial das pessoas</div>
+              <div class="map-arrow">→</div>
+              <div class="map-item">Capacitar nas competências necessárias para o crescimento da organização</div>
+              <div class="map-arrow">→</div>
+              <div class="map-item">Fortalecer a cultura da organização no foco do cliente</div>
+              <div class="map-arrow">→</div>
+              <div class="map-item">Evoluir na governança digital e cibernética</div>
+            </div>
+          </div>
+
+        </div><!-- end map-rows -->
+      </div>
+    </section>
+
+    <!-- SECTION 2: PROJETOS ESTRATÉGICOS -->
+    <section class="section-projects" id="projetos">
+      <div class="container">
+        <div class="section-label">Iniciativas</div>
+        <h2 class="section-title">Projetos <span class="highlight">Estratégicos</span></h2>
+        <p class="section-sub">14 projetos que sustentam a execução do nosso mapa estratégico</p>
+        <div class="projects-grid" id="projects-grid">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3: VELOCÍMETRO / META -->
+    <section class="section-gauge" id="meta">
+      <div class="container">
+        <div class="section-label">Acompanhamento</div>
+        <h2 class="section-title">Meta <span class="highlight">Anual</span></h2>
+        <p class="section-sub">Evolução mês a mês do atingimento da meta</p>
+
+        <!-- Gauge Canvas -->
+        <div class="gauge-wrapper">
+          <canvas id="gaugeCanvas" width="750" height="420"></canvas>
+          <div class="gauge-center-text">
+            <div class="gauge-pct" id="gauge-pct">0,0%</div>
+            <div class="gauge-label">ACUMULADO</div>
+            <div class="gauge-val" id="gauge-val">R$ 0</div>
+          </div>
+        </div>
+        <div class="gauge-bottom-text">
+          META DO ANO<br>
+          <strong id="gauge-meta-label">R$ 0 · 2026</strong>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-label">META DO ANO</div>
+            <div class="kpi-value" id="kpi-meta">R$ 0</div>
+            <div class="kpi-sub" id="kpi-meta-sub">80% = R$ 0 = GANHO</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">% ATINGIDO</div>
+            <div class="kpi-value-row">
+              <span class="kpi-value" id="kpi-pct">0,0%</span>
+              <span class="status-badge" id="kpi-status">Atenção</span>
+            </div>
+            <div class="kpi-sub" id="kpi-months-info">0 de 12 meses com dados</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">REALIZADO ACUMULADO</div>
+            <div class="kpi-value" id="kpi-realizado">R$ 0</div>
+            <div class="kpi-sub" id="kpi-falta">Falta: R$ 0</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">PARA O GANHO (80%)</div>
+            <div class="kpi-value" id="kpi-ganho">R$ 0</div>
+            <div class="kpi-sub">Valor restante para atingir 80%</div>
+          </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-section">
+          <div class="progress-header">
+            <span class="progress-label">PROGRESSO ANUAL</span>
+            <span class="progress-pct" id="prog-pct">0,0%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+            <div class="progress-marker80"></div>
+          </div>
+          <div class="progress-ticks">
+            <span>0%</span><span>80% (Ganho)</span><span>100%</span>
+          </div>
+        </div>
+
+        <!-- Monthly Bars -->
+        <div class="monthly-section">
+          <div class="monthly-label">DESEMPENHO POR MÊS</div>
+          <div class="monthly-bars" id="monthly-bars"></div>
+          <div class="monthly-names" id="monthly-names"></div>
+        </div>
+
+        <!-- Monthly Detail -->
+        <div class="monthly-detail">
+          <h3 class="detail-title">Detalhamento Mensal e Justificativas</h3>
+          <div id="monthly-detail-list"></div>
+        </div>
+
+      </div>
+    </section>
+
+  </div><!-- end main-page -->
+
+  <!-- ========== ADMIN LOGIN MODAL ========== -->
+  <div id="admin-login-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span>⚙ Acesso Administrativo</span>
+        <button class="modal-close" onclick="closeAdminLogin()">✕</button>
+      </div>
+      <div class="modal-body">
+        <label>Senha de Acesso</label>
+        <input type="password" id="admin-pwd-input" placeholder="Digite a senha..."
+          onkeydown="if(event.key==='Enter')loginAdmin()">
+        <div class="modal-error hidden" id="login-error">Senha incorreta. Tente novamente.</div>
+        <button class="btn-primary" onclick="loginAdmin()">Entrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== ADMIN PANEL ========== -->
+  <div id="admin-panel" class="hidden">
+    <div class="admin-header">
+      <div>
+        <h2>⚙ Painel Administrativo</h2>
+        <p>Atualize as metas, projetos e justificativas abaixo</p>
+      </div>
+      <div class="admin-header-btns">
+        <button class="btn-save" onclick="saveAll()">💾 Salvar</button>
+        <button class="btn-exit" onclick="exitAdmin()">Sair</button>
+      </div>
+    </div>
+
+    <div class="admin-content">
+
+      <!-- Config Gerais -->
+      <div class="admin-card">
+        <h3 class="admin-card-title">Configurações Gerais</h3>
+        <div class="admin-row-3">
+          <div class="field-group">
+            <label>Ano de Referência</label>
+            <input type="number" id="cfg-year" value="2026">
+          </div>
+          <div class="field-group">
+            <label>Meta Anual (R$)</label>
+            <input type="number" id="cfg-meta" value="2400000">
+            <span class="field-hint" id="cfg-meta-hint">80% = R$ 1.920.000</span>
+          </div>
+          <div class="field-group">
+            <label>Senha de Acesso</label>
+            <input type="text" id="cfg-pwd" value="supera">
+            <span class="field-hint">Altere para uma senha segura</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Projetos -->
+      <div class="admin-card">
+        <h3 class="admin-card-title">Projetos Estratégicos (14)</h3>
+        <div class="projects-admin-grid" id="projects-admin-grid">
+          <!-- rendered by JS -->
+        </div>
+      </div>
+
+      <!-- Metas mensais -->
+      <div class="admin-card">
+        <h3 class="admin-card-title">Metas e Realizados Mensais</h3>
+        <div class="months-admin-grid" id="months-admin-grid">
+          <!-- rendered by JS -->
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>
