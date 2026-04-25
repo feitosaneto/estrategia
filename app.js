@@ -1,21 +1,37 @@
+// ===== FIREBASE CONFIG =====
+// 1. Acesse https://console.firebase.google.com
+// 2. Crie um projeto → Firestore Database → Criar banco de dados (modo produção ou teste)
+// 3. Vá em Configurações do projeto → Seus apps → Adicionar app Web
+// 4. Cole as credenciais abaixo:
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDr1UfCEyPbp8xcBnuY9A-SFHdR5PXmQkQ",
+  authDomain: "estrategia-cae9a.firebaseapp.com",
+  projectId: "estrategia-cae9a",
+  storageBucket: "estrategia-cae9a.firebasestorage.app",
+  messagingSenderId: "97503333550",
+  appId: "1:97503333550:web:f35d5b64111a21a4c8713f",
+  measurementId: "G-T63JQWFVSH"
+};
+
 // ===== DATA =====
-const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-const MONTH_ABBR = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+const MONTH_ABBR = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
-const ICONS = ['🚀','💡','🎯','📊','🔧','⚙️','🌱','🤝','💼','📈','🏆','🔍','💬','🛡️','🌐','📦','🔗','✅','🧩','⭐'];
+const ICONS = ['🚀', '💡', '🎯', '📊', '🔧', '⚙️', '🌱', '🤝', '💼', '📈', '🏆', '🔍', '💬', '🛡️', '🌐', '📦', '🔗', '✅', '🧩', '⭐'];
 
-// Monthly metas ramp (matches the reference design ~150k→240k)
-const DEFAULT_METAS = [150000,160000,180000,190000,200000,200000,200000,210000,210000,230000,230000,240000];
+const DEFAULT_METAS = [150000, 160000, 180000, 190000, 200000, 200000, 200000, 210000, 210000, 230000, 230000, 240000];
 
-// Default data structure
+const DATA_VERSION = 2;
+const LS_KEY = 'estrategia2026';
+
 function defaultData() {
   return {
     year: 2026,
     meta: 2400000,
     password: 'supera',
-    projects: Array.from({length:14}, (_,i) => ({
-      id: i+1,
-      name: `Projeto ${i+1}`,
+    projects: Array.from({ length: 14 }, (_, i) => ({
+      id: i + 1,
+      name: `Projeto ${i + 1}`,
       description: '',
       icon: ICONS[i] || '🚀',
       imageData: null
@@ -29,42 +45,131 @@ function defaultData() {
   };
 }
 
-const DATA_VERSION = 2;
-
-// Load from localStorage or defaults
-function loadData() {
-  try {
-    const raw = localStorage.getItem('estrategia2026');
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      // Migrate: if old data without version, apply default metas if all zero
-      if (!parsed._v || parsed._v < DATA_VERSION) {
-        const allZero = parsed.months && parsed.months.every(m => m.meta === 0);
-        if (allZero) {
-          parsed.months = parsed.months.map((m, i) => ({ ...m, meta: DEFAULT_METAS[i] }));
-        }
-        parsed._v = DATA_VERSION;
-      }
-      return parsed;
+function migrateData(parsed) {
+  if (!parsed._v || parsed._v < DATA_VERSION) {
+    const allZero = parsed.months && parsed.months.every(m => m.meta === 0);
+    if (allZero) {
+      parsed.months = parsed.months.map((m, i) => ({ ...m, meta: DEFAULT_METAS[i] }));
     }
-  } catch(e) {}
-  return defaultData();
+    parsed._v = DATA_VERSION;
+  }
+  return parsed;
 }
 
-function saveData(data) {
-  data._v = DATA_VERSION;
-  localStorage.setItem('estrategia2026', JSON.stringify(data));
+// ===== FIREBASE SETUP =====
+let db = null;
+let dataDocRef = null;
+let unsubscribeListener = null;
+const FIREBASE_ENABLED = !!(FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.projectId);
+
+async function initFirebase() {
+  if (!FIREBASE_ENABLED) return false;
+  try {
+    const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+    const { getFirestore, doc, getDoc, setDoc, onSnapshot } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+
+    const firebaseApp = initializeApp(FIREBASE_CONFIG);
+    db = getFirestore(firebaseApp);
+    dataDocRef = doc(db, 'estrategia', 'dados2026');
+
+    // Guarda funções do Firestore para uso posterior
+    window._firestoreSetDoc = setDoc;
+    window._firestoreOnSnapshot = onSnapshot;
+    return true;
+  } catch (e) {
+    console.warn('Erro ao inicializar Firebase:', e);
+    return false;
+  }
 }
 
-let DATA = loadData();
+async function loadFromFirestore() {
+  try {
+    const { getDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const snap = await getDoc(dataDocRef);
+    if (snap.exists()) {
+      return migrateData(snap.data());
+    }
+  } catch (e) {
+    console.warn('Erro ao carregar do Firestore:', e);
+  }
+  return null;
+}
+
+async function saveToFirestore(data) {
+  try {
+    await window._firestoreSetDoc(dataDocRef, data);
+    return true;
+  } catch (e) {
+    console.error('Erro ao salvar no Firestore:', e);
+    return false;
+  }
+}
+
+function startRealtimeListener() {
+  if (!dataDocRef || !window._firestoreOnSnapshot) return;
+  // Cancela listener anterior se existir
+  if (unsubscribeListener) unsubscribeListener();
+
+  unsubscribeListener = window._firestoreOnSnapshot(dataDocRef, (snap) => {
+    if (snap.exists()) {
+      const newData = migrateData(snap.data());
+      // Só atualiza se não estiver no painel admin (evita sobrescrever edições em andamento)
+      if (document.getElementById('admin-panel').classList.contains('hidden')) {
+        DATA = newData;
+        localStorage.setItem(LS_KEY, JSON.stringify(DATA));
+        renderPage();
+      }
+    }
+  });
+}
+
+// ===== LOCAL STORAGE (fallback / cache) =====
+function loadFromLocalStorage() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) return migrateData(JSON.parse(raw));
+  } catch (e) { }
+  return null;
+}
+
+// ===== GLOBAL DATA =====
+let DATA = defaultData();
 
 // ===== NOTIFICATION =====
 function notify(msg) {
   let el = document.getElementById('__notify');
-  if (!el) { el = document.createElement('div'); el.className = 'notify'; el.id = '__notify'; document.body.appendChild(el); }
+  if (!el) {
+    el = document.createElement('div');
+    el.className = 'notify';
+    el.id = '__notify';
+    document.body.appendChild(el);
+  }
   el.textContent = msg;
   el.classList.add('show');
   setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// ===== LOADING STATE =====
+function showLoading(show) {
+  let el = document.getElementById('__loading');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = '__loading';
+    el.style.cssText = `
+      position:fixed;top:0;left:0;right:0;bottom:0;
+      background:rgba(240,245,251,0.85);
+      display:flex;align-items:center;justify-content:center;
+      z-index:9999;font-family:Inter,sans-serif;
+      flex-direction:column;gap:16px;
+    `;
+    el.innerHTML = `
+      <div style="width:48px;height:48px;border:4px solid #dce8f5;border-top-color:#2563a8;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+      <div style="color:#1a3a6b;font-weight:600;font-size:15px;">Carregando dados...</div>
+      <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+    `;
+    document.body.appendChild(el);
+  }
+  el.style.display = show ? 'flex' : 'none';
 }
 
 // ===== ADMIN AUTH =====
@@ -95,7 +200,6 @@ function openAdmin() {
   document.getElementById('admin-panel').classList.remove('hidden');
   renderAdminProjects();
   renderAdminMonths();
-  // Fill cfg fields
   document.getElementById('cfg-year').value = DATA.year;
   document.getElementById('cfg-meta').value = DATA.meta;
   document.getElementById('cfg-pwd').value = DATA.password;
@@ -120,7 +224,7 @@ function renderAdminProjects() {
       ? `<img src="${p.imageData}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">`
       : p.icon;
     div.innerHTML = `
-      <div class="proj-admin-title">Projeto ${String(i+1).padStart(2,'0')}</div>
+      <div class="proj-admin-title">Projeto ${String(i + 1).padStart(2, '0')}</div>
       <div class="proj-admin-fields">
         <div class="field-group">
           <label>Título</label>
@@ -144,7 +248,7 @@ function renderAdminProjects() {
             </div>
             <div class="icon-label" style="margin-top:6px">Ou escolha um ícone emoji:</div>
             <div class="icon-picker" id="ip-${i}">
-              ${ICONS.map(ic => `<button type="button" class="icon-opt${p.icon===ic?' selected':''}" onclick="selectIcon(${i},'${ic}')" title="${ic}">${ic}</button>`).join('')}
+              ${ICONS.map(ic => `<button type="button" class="icon-opt${p.icon === ic ? ' selected' : ''}" onclick="selectIcon(${i},'${ic}')" title="${ic}">${ic}</button>`).join('')}
             </div>
           </div>
         </div>
@@ -171,7 +275,6 @@ function handleImageUpload(idx, input) {
     if (box) {
       box.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">`;
     }
-    // show clear button
     const ctrl = input.parentElement;
     if (ctrl && !ctrl.querySelector('.btn-clear-img')) {
       const btn = document.createElement('button');
@@ -218,7 +321,7 @@ function renderAdminMonths() {
 }
 
 // ===== SAVE =====
-function saveAll() {
+async function saveAll() {
   // Config
   DATA.year = parseInt(document.getElementById('cfg-year').value) || 2026;
   DATA.meta = parseFloat(document.getElementById('cfg-meta').value) || 0;
@@ -238,9 +341,32 @@ function saveAll() {
     m.justificativa = document.getElementById(`m-just-${i}`).value;
   });
 
-  saveData(DATA);
+  DATA._v = DATA_VERSION;
+
+  // Sempre salva no localStorage como cache
+  localStorage.setItem(LS_KEY, JSON.stringify(DATA));
+
+  let savedRemote = false;
+  if (FIREBASE_ENABLED && dataDocRef) {
+    const btn = document.querySelector('.btn-save');
+    const originalText = btn.textContent;
+    btn.textContent = '⏳ Salvando...';
+    btn.disabled = true;
+
+    savedRemote = await saveToFirestore(DATA);
+
+    btn.textContent = originalText;
+    btn.disabled = false;
+  }
+
   renderPage();
-  notify('✅ Dados salvos com sucesso!');
+
+  if (FIREBASE_ENABLED) {
+    notify(savedRemote ? '✅ Dados salvos e publicados!' : '⚠️ Salvo localmente (erro no servidor)');
+  } else {
+    notify('✅ Dados salvos localmente!');
+  }
+
   exitAdmin();
 }
 
@@ -263,7 +389,7 @@ function renderProjects() {
       : p.icon;
     card.innerHTML = `
       <div class="project-icon">${iconContent}</div>
-      <div class="project-num">Projeto ${String(i+1).padStart(2,'0')}</div>
+      <div class="project-num">Projeto ${String(i + 1).padStart(2, '0')}</div>
       <div class="project-name">${escHtml(p.name)}</div>
       ${p.description
         ? `<div class="project-desc">${escHtml(p.description)}</div>`
@@ -281,20 +407,18 @@ function renderGauge() {
   const pct = meta > 0 ? (totalReal / meta) * 100 : 0;
   const ganho80 = meta * 0.8;
 
-  // Update text elements
-  document.getElementById('gauge-pct').textContent = pct.toFixed(1).replace('.',',') + '%';
+  document.getElementById('gauge-pct').textContent = pct.toFixed(1).replace('.', ',') + '%';
   document.getElementById('gauge-val').textContent = formatBRL(totalReal);
   document.getElementById('gauge-meta-label').textContent = `${formatBRL(meta)} · ${DATA.year}`;
   document.getElementById('kpi-meta').textContent = formatBRL(meta);
   document.getElementById('kpi-meta-sub').textContent = `80% = ${formatBRL(ganho80)} = GANHO`;
-  document.getElementById('kpi-pct').textContent = pct.toFixed(1).replace('.',',') + '%';
+  document.getElementById('kpi-pct').textContent = pct.toFixed(1).replace('.', ',') + '%';
   document.getElementById('kpi-realizado').textContent = formatBRL(totalReal);
   document.getElementById('kpi-falta').textContent = `Falta: ${formatBRL(Math.max(0, meta - totalReal))}`;
   document.getElementById('kpi-ganho').textContent = formatBRL(Math.max(0, ganho80 - totalReal));
   document.getElementById('kpi-months-info').textContent = `${monthsWithData.length} de 12 meses com dados`;
-  document.getElementById('prog-pct').textContent = pct.toFixed(1).replace('.',',') + '%';
+  document.getElementById('prog-pct').textContent = pct.toFixed(1).replace('.', ',') + '%';
 
-  // Status badge
   const badge = document.getElementById('kpi-status');
   badge.className = 'status-badge';
   if (pct >= 80) { badge.textContent = 'Ganho'; badge.classList.add('status-ganho'); }
@@ -302,14 +426,10 @@ function renderGauge() {
   else if (monthsWithData.length === 0) { badge.textContent = 'Pendente'; badge.classList.add('status-pendente'); }
   else { badge.textContent = 'Atenção'; badge.classList.add('status-atencao'); }
 
-  // Progress bar
   const fillEl = document.getElementById('progress-fill');
   fillEl.style.width = Math.min(pct, 100) + '%';
 
-  // Draw canvas gauge
   drawGauge(pct, meta, meses);
-
-  // Monthly bars
   renderMonthlyBars(meta, meses);
 }
 
@@ -322,14 +442,10 @@ function drawGauge(pct, metaTotal, meses) {
   const cx = W / 2, cy = H - 55;
   const outerR = Math.min(W, H * 1.6) * 0.44;
   const innerR = outerR * 0.55;
-  const startAngle = Math.PI; // left
-  const endAngle = 0;        // right
-
   const segCount = 12;
   const gap = 0.025;
   const segSpan = (Math.PI - gap * (segCount + 1)) / segCount;
 
-  // Month metas for relative bar sizes
   const maxMeta = Math.max(...meses.map(m => m.meta), 1);
 
   for (let i = 0; i < segCount; i++) {
@@ -340,7 +456,6 @@ function drawGauge(pct, metaTotal, meses) {
     const monthPct = m.realizado !== null && m.meta > 0 ? m.realizado / m.meta : 0;
     const relOuter = innerR + (outerR - innerR) * (m.meta > 0 ? (m.meta / maxMeta) * 0.85 + 0.15 : 0.2);
 
-    // Background seg
     ctx.beginPath();
     ctx.moveTo(cx + innerR * Math.cos(a1), cy + innerR * Math.sin(a1) * -1);
     ctx.arc(cx, cy, innerR, -a1, -a2, false);
@@ -350,7 +465,6 @@ function drawGauge(pct, metaTotal, meses) {
     ctx.fillStyle = '#dce8f5';
     ctx.fill();
 
-    // Filled portion
     if (m.realizado !== null && m.realizado > 0) {
       const fillR = innerR + (relOuter - innerR) * Math.min(monthPct, 1);
       ctx.beginPath();
@@ -366,7 +480,6 @@ function drawGauge(pct, metaTotal, meses) {
       ctx.fill();
     }
 
-    // Label: month + meta
     const midAngle = (a1 + a2) / 2;
     const labelR = relOuter + 26;
     const lx = cx + labelR * Math.cos(midAngle);
@@ -383,7 +496,6 @@ function drawGauge(pct, metaTotal, meses) {
     ctx.restore();
   }
 
-  // Inner circle
   const grad2 = ctx.createRadialGradient(cx, cy, 0, cx, cy, innerR * 0.9);
   grad2.addColorStop(0, '#e8f4ff');
   grad2.addColorStop(1, '#c8dff5');
@@ -395,7 +507,6 @@ function drawGauge(pct, metaTotal, meses) {
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  // Needle
   const needleAngle = Math.PI - (pct / 100) * Math.PI;
   const nx = cx + (innerR * 0.85) * Math.cos(needleAngle);
   const ny = cy - (innerR * 0.85) * Math.sin(needleAngle);
@@ -407,13 +518,11 @@ function drawGauge(pct, metaTotal, meses) {
   ctx.lineCap = 'round';
   ctx.stroke();
 
-  // Center dot
   ctx.beginPath();
   ctx.arc(cx, cy, 6, 0, Math.PI * 2);
   ctx.fillStyle = '#1a3a6b';
   ctx.fill();
 
-  // 80% marker (green dashed line + label)
   const markerAngle = Math.PI - 0.8 * Math.PI;
   ctx.beginPath();
   ctx.setLineDash([5, 4]);
@@ -427,7 +536,6 @@ function drawGauge(pct, metaTotal, meses) {
   ctx.lineTo(m80x2, m80y2);
   ctx.stroke();
   ctx.setLineDash([]);
-  // 80% badge — offset angle slightly clockwise (+0.1 rad) and pushed further out
   const badgeAngle = markerAngle - 0.10;
   const badgeLx = cx + (outerR + 85) * Math.cos(badgeAngle);
   const badgeLy = cy - (outerR + 85) * Math.sin(badgeAngle);
@@ -436,7 +544,7 @@ function drawGauge(pct, metaTotal, meses) {
   ctx.fillStyle = '#d4f4e2';
   const bw = 82, bh = 22;
   ctx.beginPath();
-  ctx.roundRect(-bw/2, -bh/2, bw, bh, 5);
+  ctx.roundRect(-bw / 2, -bh / 2, bw, bh, 5);
   ctx.fill();
   ctx.strokeStyle = '#27ae60';
   ctx.lineWidth = 1;
@@ -465,7 +573,7 @@ function renderMonthlyBars(metaTotal, meses) {
 
     const wrap = document.createElement('div');
     wrap.className = 'monthly-bar-wrap';
-    wrap.innerHTML = `<div class="monthly-bar${isFull?' filled':isPartial?' partial':''}" style="height:${barH}px"></div>`;
+    wrap.innerHTML = `<div class="monthly-bar${isFull ? ' filled' : isPartial ? ' partial' : ''}" style="height:${barH}px"></div>`;
     barsEl.appendChild(wrap);
 
     const nm = document.createElement('div');
@@ -506,16 +614,62 @@ function renderMonthlyDetail() {
 // ===== HELPERS =====
 function formatBRL(n) {
   if (n === null || n === undefined) return '—';
-  return 'R$ ' + n.toLocaleString('pt-BR', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+  return 'R$ ' + n.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 function formatK(n) {
-  if (n >= 1000000) return 'R$ ' + (n/1000000).toFixed(1).replace('.',',') + 'M';
-  if (n >= 1000) return 'R$ ' + (n/1000).toFixed(0) + 'K';
+  if (n >= 1000000) return 'R$ ' + (n / 1000000).toFixed(1).replace('.', ',') + 'M';
+  if (n >= 1000) return 'R$ ' + (n / 1000).toFixed(0) + 'K';
   return 'R$ ' + n;
 }
 function escHtml(s) {
-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+// ===== EXPÕE FUNÇÕES GLOBAIS (necessário com type="module") =====
+window.openAdminLogin = openAdminLogin;
+window.closeAdminLogin = closeAdminLogin;
+window.loginAdmin = loginAdmin;
+window.exitAdmin = exitAdmin;
+window.openAdmin = openAdmin;
+window.saveAll = saveAll;
+window.selectIcon = selectIcon;
+window.handleImageUpload = handleImageUpload;
+window.clearImage = clearImage;
+window.updateMetaHint = updateMetaHint;
+
 // ===== INIT =====
-renderPage();
+async function init() {
+  showLoading(true);
+
+  // Carrega localStorage como cache inicial (resposta imediata)
+  const cached = loadFromLocalStorage();
+  if (cached) {
+    DATA = cached;
+    renderPage();
+  }
+
+  // Tenta inicializar Firebase e buscar dados atualizados
+  const firebaseOk = await initFirebase();
+
+  if (firebaseOk) {
+    const remoteData = await loadFromFirestore();
+    if (remoteData) {
+      DATA = remoteData;
+      localStorage.setItem(LS_KEY, JSON.stringify(DATA));
+      renderPage();
+    } else if (!cached) {
+      // Primeiro acesso sem dados remotos: sobe os dados padrão
+      DATA = defaultData();
+      renderPage();
+    }
+    // Inicia listener em tempo real
+    startRealtimeListener();
+  } else if (!cached) {
+    DATA = defaultData();
+    renderPage();
+  }
+
+  showLoading(false);
+}
+
+init();
