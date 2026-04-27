@@ -31,7 +31,7 @@ function defaultData() {
     password: 'supera',
     projects: Array.from({ length: 14 }, (_, i) => ({
       id: i + 1,
-      name: `Projeto ${i + 1}`,
+      name: '',
       description: '',
       icon: ICONS[i] || '🚀',
       imageData: null
