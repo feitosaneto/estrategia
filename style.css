@@ -155,6 +155,7 @@ section {
 /* ===== MAP SECTION ===== */
 .section-map {
   background: linear-gradient(160deg, #e8f0fa 0%, #d4e8f7 100%);
+  padding-bottom: 15px;
 }
 
 .map-pillars {
@@ -314,9 +315,43 @@ section {
   flex-shrink: 0;
 }
 
+/* ===== BANNER SECTION ===== */
+.section-banner {
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  overflow: hidden;
+  line-height: 0;
+}
+
+
+.section-banner a {
+  display: block;
+  width: 100%;
+  line-height: 0;
+}
+
+.banner-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  cursor: pointer;
+  object-fit: cover;
+  object-position: center;
+}
+
+@media (max-width: 768px) {
+  .banner-img {
+    height: 160px;
+    object-fit: cover;
+    object-position: center center;
+  }
+}
+
 /* ===== PROJECTS SECTION ===== */
 .section-projects {
   background: var(--bg);
+  padding-top: 15px;
 }
 
 .projects-grid {

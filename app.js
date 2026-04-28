@@ -31,7 +31,7 @@ function defaultData() {
     password: 'supera',
     projects: Array.from({ length: 14 }, (_, i) => ({
       id: i + 1,
-      name: `Projeto ${i+1}`,
+      name: `Projeto ${i + 1}`,
       description: '',
       icon: ICONS[i] || '🚀',
       imageData: null
@@ -87,7 +87,9 @@ async function loadFromFirestore() {
     const { getDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
     const snap = await getDoc(dataDocRef);
     if (snap.exists()) {
-      return migrateData(snap.data());
+      const d = migrateData(snap.data());
+      delete d.bannerImageData; // remove campo legado se existir
+      return d;
     }
   } catch (e) {
     console.warn('Erro ao carregar do Firestore:', e);
@@ -97,7 +99,9 @@ async function loadFromFirestore() {
 
 async function saveToFirestore(data) {
   try {
-    await window._firestoreSetDoc(dataDocRef, data);
+    const clean = { ...data };
+    delete clean.bannerImageData; // nunca salvar banner no doc principal
+    await window._firestoreSetDoc(dataDocRef, clean);
     return true;
   } catch (e) {
     console.error('Erro ao salvar no Firestore:', e);
@@ -343,7 +347,6 @@ async function saveAll() {
 
   DATA._v = DATA_VERSION;
 
-  // Sempre salva no localStorage como cache
   localStorage.setItem(LS_KEY, JSON.stringify(DATA));
 
   let savedRemote = false;
@@ -636,19 +639,16 @@ window.selectIcon = selectIcon;
 window.handleImageUpload = handleImageUpload;
 window.clearImage = clearImage;
 window.updateMetaHint = updateMetaHint;
-
 // ===== INIT =====
 async function init() {
   showLoading(true);
 
-  // Carrega localStorage como cache inicial (resposta imediata)
   const cached = loadFromLocalStorage();
   if (cached) {
     DATA = cached;
     renderPage();
   }
 
-  // Tenta inicializar Firebase e buscar dados atualizados
   const firebaseOk = await initFirebase();
 
   if (firebaseOk) {
@@ -656,13 +656,10 @@ async function init() {
     if (remoteData) {
       DATA = remoteData;
       localStorage.setItem(LS_KEY, JSON.stringify(DATA));
-      renderPage();
     } else if (!cached) {
-      // Primeiro acesso sem dados remotos: sobe os dados padrão
       DATA = defaultData();
-      renderPage();
     }
-    // Inicia listener em tempo real
+    renderPage();
     startRealtimeListener();
   } else if (!cached) {
     DATA = defaultData();
