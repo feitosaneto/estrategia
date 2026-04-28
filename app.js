@@ -34,7 +34,8 @@ function defaultData() {
       name: `Projeto ${i + 1}`,
       description: '',
       icon: ICONS[i] || '🚀',
-      imageData: null
+      imageData: null,
+      link: ''
     })),
     months: MONTHS.map((m, i) => ({
       name: m,
@@ -239,6 +240,10 @@ function renderAdminProjects() {
           <textarea id="p-desc-${i}" rows="3" placeholder="Descreva brevemente o projeto...">${escHtml(p.description)}</textarea>
         </div>
         <div class="field-group">
+          <label>Link (ao clicar no card)</label>
+          <input type="url" id="p-link-${i}" value="${escHtml(p.link || '')}" placeholder="https://...">
+        </div>
+        <div class="field-group">
           <label>Imagem / Ícone</label>
           <div class="img-upload-section">
             <div class="img-upload-row">
@@ -335,6 +340,7 @@ async function saveAll() {
   DATA.projects.forEach((p, i) => {
     p.name = document.getElementById(`p-name-${i}`).value;
     p.description = document.getElementById(`p-desc-${i}`).value;
+    p.link = document.getElementById(`p-link-${i}`).value.trim();
   });
 
   // Months
@@ -385,18 +391,28 @@ function renderProjects() {
   const grid = document.getElementById('projects-grid');
   grid.innerHTML = '';
   DATA.projects.forEach((p, i) => {
-    const card = document.createElement('div');
-    card.className = 'project-card';
     const iconContent = p.imageData
       ? `<img src="${p.imageData}" alt="${escHtml(p.name)}">`
       : p.icon;
-    card.innerHTML = `
+    const innerHtml = `
       <div class="project-icon">${iconContent}</div>
-      <div class="project-num">Projeto ${String(i + 1).padStart(2, '0')}</div>
       <div class="project-name">${escHtml(p.name)}</div>
       ${p.description
         ? `<div class="project-desc">${escHtml(p.description)}</div>`
         : `<div class="project-empty">Sem descrição cadastrada.</div>`}`;
+
+    let card;
+    if (p.link) {
+      card = document.createElement('a');
+      card.href = p.link;
+      card.target = '_blank';
+      card.rel = 'noopener noreferrer';
+      card.className = 'project-card project-card--link';
+    } else {
+      card = document.createElement('div');
+      card.className = 'project-card';
+    }
+    card.innerHTML = innerHtml;
     grid.appendChild(card);
   });
 }

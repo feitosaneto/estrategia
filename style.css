@@ -401,12 +401,13 @@ section {
   border-radius: 24px;
 }
 
-.project-num {
-  font-size: .7rem;
-  font-weight: 700;
-  color: var(--blue-mid);
-  text-transform: uppercase;
-  letter-spacing: .1em;
+.project-card--link {
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.project-card--link:hover {
+  border-top-color: var(--cyan);
 }
 
 .project-name {
